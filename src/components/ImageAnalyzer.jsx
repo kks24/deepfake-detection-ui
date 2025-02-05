@@ -49,33 +49,40 @@ const ImageAnalyzer = () => {
     if (!containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const startX = e.clientX - rect.left;
+    const startY = e.clientY - rect.top;
     
     setIsDragging(true);
-    setCropBox(prev => ({
-      ...prev,
-      x,
-      y,
+    setCropBox({
+      x: startX,
+      y: startY,
       width: 0,
       height: 0
-    }));
+    });
   }, []);
 
   const handleMouseMove = useCallback((e) => {
     if (!isDragging || !containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(e.clientX - rect.left, imageSize.width));
-    const y = Math.max(0, Math.min(e.clientY - rect.top, imageSize.height));
+    const currentX = Math.max(0, Math.min(e.clientX - rect.left, imageSize.width));
+    const currentY = Math.max(0, Math.min(e.clientY - rect.top, imageSize.height));
     
     setCropBox(prev => {
-      const width = x - prev.x;
-      const height = width; // Keep square aspect ratio
+      // Calculate dimensions while maintaining square aspect ratio
+      const deltaX = currentX - prev.x;
+      const deltaY = currentY - prev.y;
+      const size = Math.min(
+        Math.abs(deltaX),
+        Math.abs(deltaY),
+        imageSize.width - prev.x,
+        imageSize.height - prev.y
+      );
+
       return {
         ...prev,
-        width: Math.min(width, imageSize.height - prev.y),
-        height: Math.min(height, imageSize.height - prev.y)
+        width: size,
+        height: size
       };
     });
   }, [isDragging, imageSize]);
@@ -250,7 +257,7 @@ const ImageAnalyzer = () => {
             {croppedUrl && (
               <div className="border rounded-lg p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-lg font-semibold">Cropped Image</h3>
+                  <h3 className="text-lg font-semibold">Cropped Image (160x160)</h3>
                   <button
                     onClick={handleRecrop}
                     className="text-blue-600 hover:text-blue-800"
