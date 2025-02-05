@@ -1,20 +1,31 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 
 const ImageAnalyzer = () => {
   const [image, setImage] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [originalUrl, setOriginalUrl] = useState(null);
+  const [croppedUrl, setCroppedUrl] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [cropBox, setCropBox] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  
   const fileInputRef = useRef(null);
+  const canvasRef = useRef(null);
+  const imageRef = useRef(null);
+  const containerRef = useRef(null);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
-      setImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreviewUrl(reader.result);
+        setImage(file);
+        setOriginalUrl(reader.result);
+        setCroppedUrl(null);
+        setCropBox({ x: 0, y: 0, width: 0, height: 0 });
+        setResult(null);
       };
       reader.readAsDataURL(file);
       setError(null);
@@ -23,27 +34,86 @@ const ImageAnalyzer = () => {
     }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
+  const onImageLoad = useCallback((e) => {
+    const { width, height } = e.target;
+    setImageSize({ width, height });
+    
+    // Initialize crop box in the center
+    const size = Math.min(width, height) / 2;
+    const x = (width - size) / 2;
+    const y = (height - size) / 2;
+    setCropBox({ x, y, width: size, height: size });
+  }, []);
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
-      setImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result);
+  const handleMouseDown = useCallback((e) => {
+    if (!containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    setIsDragging(true);
+    setCropBox(prev => ({
+      ...prev,
+      x,
+      y,
+      width: 0,
+      height: 0
+    }));
+  }, []);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging || !containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, imageSize.width));
+    const y = Math.max(0, Math.min(e.clientY - rect.top, imageSize.height));
+    
+    setCropBox(prev => {
+      const width = x - prev.x;
+      const height = width; // Keep square aspect ratio
+      return {
+        ...prev,
+        width: Math.min(width, imageSize.height - prev.y),
+        height: Math.min(height, imageSize.height - prev.y)
       };
-      reader.readAsDataURL(file);
-      setError(null);
-    } else {
-      setError("Please select a valid JPEG or PNG image.");
-    }
-  };
+    });
+  }, [isDragging, imageSize]);
+
+  const handleMouseUp = useCallback(() => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    const canvas = canvasRef.current;
+    const img = imageRef.current;
+    if (!canvas || !img || cropBox.width <= 0) return;
+
+    // Draw cropped image to canvas
+    canvas.width = 160;
+    canvas.height = 160;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.drawImage(
+      img,
+      cropBox.x * (img.naturalWidth / img.width),
+      cropBox.y * (img.naturalHeight / img.height),
+      cropBox.width * (img.naturalWidth / img.width),
+      cropBox.height * (img.naturalHeight / img.height),
+      0, 0, 160, 160
+    );
+
+    // Convert to blob and update image state
+    canvas.toBlob((blob) => {
+      if (blob) {
+        setImage(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }));
+        setCroppedUrl(canvas.toDataURL('image/jpeg'));
+      }
+    }, 'image/jpeg');
+  }, [isDragging, cropBox]);
 
   const handleAnalyze = async () => {
+    if (!image) return;
+    
     try {
       setIsAnalyzing(true);
       setError(null);
@@ -69,11 +139,18 @@ const ImageAnalyzer = () => {
 
   const clearImage = () => {
     setImage(null);
-    setPreviewUrl(null);
+    setOriginalUrl(null);
+    setCroppedUrl(null);
     setResult(null);
+    setCropBox({ x: 0, y: 0, width: 0, height: 0 });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleRecrop = () => {
+    setCroppedUrl(null);
+    setCropBox({ x: 0, y: 0, width: 0, height: 0 });
   };
 
   return (
@@ -81,10 +158,8 @@ const ImageAnalyzer = () => {
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-2xl font-bold mb-4">Deepfake Detection</h2>
         
-        {!image ? (
+        {!originalUrl ? (
           <div
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-blue-500 transition-colors"
           >
@@ -100,7 +175,6 @@ const ImageAnalyzer = () => {
               stroke="currentColor"
               fill="none"
               viewBox="0 0 48 48"
-              aria-hidden="true"
             >
               <path
                 d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
@@ -110,40 +184,95 @@ const ImageAnalyzer = () => {
               />
             </svg>
             <p className="mt-2 text-sm text-gray-600">
-              Drag and drop an image here, or click to select
+              Click to select an image (JPEG or PNG)
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="relative">
-              <button
-                onClick={clearImage}
-                className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+          <div className="space-y-6">
+            {/* Original image with cropping interface */}
+            <div className="border rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-2">Original Image</h3>
+              <div 
+                ref={containerRef}
+                className="relative inline-block"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <button
+                  onClick={clearImage}
+                  className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600 z-10"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+                
+                <img
+                  ref={imageRef}
+                  src={originalUrl}
+                  alt="Original"
+                  className="max-h-96 rounded-lg"
+                  onLoad={onImageLoad}
+                  draggable={false}
+                />
+                
+                {cropBox.width > 0 && (
+                  <div
+                    className="absolute border-2 border-white pointer-events-none"
+                    style={{
+                      left: `${cropBox.x}px`,
+                      top: `${cropBox.y}px`,
+                      width: `${cropBox.width}px`,
+                      height: `${cropBox.height}px`,
+                    }}
                   />
-                </svg>
-              </button>
-              <img
-                src={previewUrl}
-                alt="Preview"
-                className="max-h-96 mx-auto rounded-lg"
-              />
+                )}
+                
+                <div className="absolute top-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center py-2">
+                  Click and drag to crop the image to 160x160 pixels
+                </div>
+              </div>
             </div>
+
+            {/* Cropped image display */}
+            {croppedUrl && (
+              <div className="border rounded-lg p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-semibold">Cropped Image</h3>
+                  <button
+                    onClick={handleRecrop}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    Recrop
+                  </button>
+                </div>
+                <div className="flex justify-center">
+                  <img
+                    src={croppedUrl}
+                    alt="Cropped"
+                    className="w-40 h-40 rounded-lg"
+                  />
+                </div>
+              </div>
+            )}
+
+            <canvas ref={canvasRef} className="hidden" />
             
             <button
               onClick={handleAnalyze}
-              disabled={isAnalyzing}
+              disabled={isAnalyzing || !croppedUrl}
               className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
             >
               {isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
