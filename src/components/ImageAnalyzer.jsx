@@ -188,7 +188,6 @@ const ImageAnalyzer = () => {
               accept="image/jpeg,image/png"
               onChange={handleFileChange}
               className="hidden"
-              capture="user"
             />
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
