@@ -45,33 +45,44 @@ const ImageAnalyzer = () => {
     setCropBox({ x, y, width: size, height: size });
   }, []);
 
-  const handleMouseDown = useCallback((e) => {
-    if (!containerRef.current) return;
+  const getEventCoordinates = (e) => {
+    if (!containerRef.current) return null;
     
     const rect = containerRef.current.getBoundingClientRect();
-    const startX = e.clientX - rect.left;
-    const startY = e.clientY - rect.top;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  };
+
+  const handleStart = useCallback((e) => {
+    e.preventDefault();
+    const coords = getEventCoordinates(e);
+    if (!coords) return;
     
     setIsDragging(true);
     setCropBox({
-      x: startX,
-      y: startY,
+      x: coords.x,
+      y: coords.y,
       width: 0,
       height: 0
     });
   }, []);
 
-  const handleMouseMove = useCallback((e) => {
-    if (!isDragging || !containerRef.current) return;
+  const handleMove = useCallback((e) => {
+    e.preventDefault();
+    if (!isDragging) return;
     
-    const rect = containerRef.current.getBoundingClientRect();
-    const currentX = Math.max(0, Math.min(e.clientX - rect.left, imageSize.width));
-    const currentY = Math.max(0, Math.min(e.clientY - rect.top, imageSize.height));
+    const coords = getEventCoordinates(e);
+    if (!coords) return;
     
     setCropBox(prev => {
       // Calculate dimensions while maintaining square aspect ratio
-      const deltaX = currentX - prev.x;
-      const deltaY = currentY - prev.y;
+      const deltaX = coords.x - prev.x;
+      const deltaY = coords.y - prev.y;
       const size = Math.min(
         Math.abs(deltaX),
         Math.abs(deltaY),
@@ -87,7 +98,8 @@ const ImageAnalyzer = () => {
     });
   }, [isDragging, imageSize]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleEnd = useCallback((e) => {
+    e.preventDefault();
     if (!isDragging) return;
     setIsDragging(false);
 
@@ -176,6 +188,7 @@ const ImageAnalyzer = () => {
               accept="image/jpeg,image/png"
               onChange={handleFileChange}
               className="hidden"
+              capture="user"
             />
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
@@ -191,7 +204,7 @@ const ImageAnalyzer = () => {
               />
             </svg>
             <p className="mt-2 text-sm text-gray-600">
-              Click to select an image (JPEG or PNG)
+              Tap to take a photo or select an image
             </p>
           </div>
         ) : (
@@ -201,15 +214,19 @@ const ImageAnalyzer = () => {
               <h3 className="text-lg font-semibold mb-2">Original Image</h3>
               <div 
                 ref={containerRef}
-                className="relative inline-block"
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
+                className="relative inline-block touch-none"
+                onMouseDown={handleStart}
+                onMouseMove={handleMove}
+                onMouseUp={handleEnd}
+                onMouseLeave={handleEnd}
+                onTouchStart={handleStart}
+                onTouchMove={handleMove}
+                onTouchEnd={handleEnd}
+                onTouchCancel={handleEnd}
               >
                 <button
                   onClick={clearImage}
-                  className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600 z-10"
+                  className="absolute top-2 right-2 p-2 bg-red-500 rounded-full text-white hover:bg-red-600 z-10"
                 >
                   <svg
                     className="h-5 w-5"
@@ -230,7 +247,7 @@ const ImageAnalyzer = () => {
                   ref={imageRef}
                   src={originalUrl}
                   alt="Original"
-                  className="max-h-96 rounded-lg"
+                  className="max-h-96 rounded-lg w-full"
                   onLoad={onImageLoad}
                   draggable={false}
                 />
@@ -248,7 +265,7 @@ const ImageAnalyzer = () => {
                 )}
                 
                 <div className="absolute top-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center py-2">
-                  Click and drag to crop the image to 160x160 pixels
+                  Touch and drag to crop the image to 160x160 pixels
                 </div>
               </div>
             </div>
@@ -260,7 +277,7 @@ const ImageAnalyzer = () => {
                   <h3 className="text-lg font-semibold">Cropped Image (160x160)</h3>
                   <button
                     onClick={handleRecrop}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg"
                   >
                     Recrop
                   </button>
@@ -280,7 +297,7 @@ const ImageAnalyzer = () => {
             <button
               onClick={handleAnalyze}
               disabled={isAnalyzing || !croppedUrl}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+              className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-lg"
             >
               {isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
             </button>
