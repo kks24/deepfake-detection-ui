@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Deepfake Detector",
+  "name": "Deepfake Detection System",
+  "description": "AI-powered deepfake detection system with image analysis capabilities",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +11,28 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#1f2937",
+  "background_color": "#111827",
+  "orientation": "portrait",
+  "categories": ["ai", "machine learning", "image analysis", "security"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Upload Image",
+      "url": "/",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    }
+  ]
 }
