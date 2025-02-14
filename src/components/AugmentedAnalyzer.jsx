@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 
-const ImageAnalyzer = () => {
+const AugmentedAnalyzer = () => {
   const [image, setImage] = useState(null);
   const [originalUrl, setOriginalUrl] = useState(null);
   const [croppedUrl, setCroppedUrl] = useState(null);
@@ -136,7 +136,7 @@ const ImageAnalyzer = () => {
       const formData = new FormData();
       formData.append('file', image);
 
-      const response = await fetch('https://6ba3-158-178-227-161.ngrok-free.app/api/v1/detect/', {
+      const response = await fetch('https://6ba3-158-178-227-161.ngrok-free.app/api/v1/detect/augmented', {
         method: 'POST',
         body: formData,
       });
@@ -171,7 +171,7 @@ const ImageAnalyzer = () => {
   return (
     <div className="space-y-6">
       <div className="bg-gray-800 rounded-lg shadow-xl p-6 border border-gray-700">
-        <h2 className="text-2xl font-bold mb-4 text-blue-400">General Detection</h2>
+        <h2 className="text-2xl font-bold mb-4 text-blue-400">In-Depth Analysis with Augmentation</h2>
         
         {!originalUrl ? (
           <div
@@ -284,40 +284,130 @@ const ImageAnalyzer = () => {
                     className="w-40 h-40 rounded-lg"
                   />
                 </div>
+
+                {!result && (
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing}
+                    className="w-full mt-4 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 text-lg transition-colors"
+                  >
+                    {isAnalyzing ? 'Analyzing...' : 'Start In-Depth Analysis'}
+                  </button>
+                )}
               </div>
             )}
 
-            <canvas ref={canvasRef} className="hidden" />
-            
-            {!result && (
-              <button
-                onClick={handleAnalyze}
-                disabled={isAnalyzing || !croppedUrl}
-                className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 text-lg transition-colors"
-              >
-                {isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
-              </button>
-            )}
-
             {result && (
-              <div className="bg-gray-900 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-4 text-blue-400">Analysis Results</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-800 p-4 rounded-lg">
-                    <p className="text-gray-400">Prediction</p>
-                    <p className="text-2xl font-bold text-white">
-                      {result.prediction}
-                    </p>
+              <div className="space-y-6">
+                {/* Consensus Prediction */}
+                <div className="bg-gray-900 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-3 text-blue-400">Consensus Results</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <p className="text-gray-400">Final Prediction</p>
+                      <div className="flex items-center space-x-2">
+                        <p className="text-2xl font-bold text-white">
+                          {result.consensus_prediction}
+                        </p>
+                        <span className={`px-2 py-1 rounded text-sm ${
+                          result.consensus_prediction === 'FAKE' 
+                            ? 'bg-red-900 text-red-200' 
+                            : 'bg-green-900 text-green-200'
+                        }`}>
+                          Consensus
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <p className="text-gray-400">Average Confidence</p>
+                      <p className="text-2xl font-bold text-white">
+                        {(result.average_confidence * 100).toFixed(2)}%
+                      </p>
+                    </div>
                   </div>
-                  <div className="bg-gray-800 p-4 rounded-lg">
-                    <p className="text-gray-400">Confidence</p>
-                    <p className="text-2xl font-bold text-white">
-                      {(result.confidence * 100).toFixed(2)}%
-                    </p>
+                </div>
+
+                {/* Original Prediction */}
+                <div className="bg-gray-900 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-3 text-blue-400">Original Prediction</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <p className="text-gray-400">Result</p>
+                      <p className="text-2xl font-bold text-white">
+                        {result.original_prediction.prediction}
+                      </p>
+                    </div>
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <p className="text-gray-400">Confidence</p>
+                      <p className="text-2xl font-bold text-white">
+                        {(result.original_prediction.confidence * 100).toFixed(2)}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Augmented Predictions */}
+                <div className="bg-gray-900 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-3 text-blue-400">Augmented Analysis</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {result.augmented_predictions.map((pred, index) => (
+                      <div key={index} className="bg-gray-800 p-4 rounded-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <p className="text-gray-400 capitalize">
+                            {pred.augmentation_type.replace('_', ' ')}
+                          </p>
+                          <span className={`px-2 py-1 rounded text-sm ${
+                            pred.prediction === 'fake' 
+                              ? 'bg-red-900 text-red-200' 
+                              : 'bg-green-900 text-green-200'
+                          }`}>
+                            {pred.prediction}
+                          </span>
+                        </div>
+                        <p className="text-xl font-bold text-white">
+                          {(pred.confidence * 100).toFixed(2)}% confidence
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Processing Details */}
+                <div className="bg-gray-900 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-3 text-blue-400">Processing Details</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <p className="text-gray-400">Processing Time</p>
+                      <p className="text-xl font-bold text-white">
+                        {result.processing_time.toFixed(3)}s
+                      </p>
+                    </div>
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <p className="text-gray-400">Input Shape</p>
+                      <p className="text-xl font-bold text-white">
+                        {result.debug_info.input_size.join(' × ')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <p className="text-gray-400">Predictions Below Threshold</p>
+                      <p className="text-xl font-bold text-white">
+                        {result.debug_info.predictions_below_threshold} / {result.debug_info.total_predictions}
+                      </p>
+                    </div>
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <p className="text-gray-400">Confidence Threshold</p>
+                      <p className="text-xl font-bold text-white">
+                        {(result.debug_info.threshold * 100)}%
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
+
+            <canvas ref={canvasRef} className="hidden" />
           </div>
         )}
 
@@ -331,4 +421,4 @@ const ImageAnalyzer = () => {
   );
 };
 
-export default ImageAnalyzer;
+export default AugmentedAnalyzer;

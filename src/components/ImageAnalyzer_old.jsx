@@ -38,6 +38,7 @@ const ImageAnalyzer = () => {
     const { width, height } = e.target;
     setImageSize({ width, height });
     
+    // Initialize crop box in the center
     const size = Math.min(width, height) / 2;
     const x = (width - size) / 2;
     const y = (height - size) / 2;
@@ -79,6 +80,7 @@ const ImageAnalyzer = () => {
     if (!coords) return;
     
     setCropBox(prev => {
+      // Calculate dimensions while maintaining square aspect ratio
       const deltaX = coords.x - prev.x;
       const deltaY = coords.y - prev.y;
       const size = Math.min(
@@ -105,6 +107,7 @@ const ImageAnalyzer = () => {
     const img = imageRef.current;
     if (!canvas || !img || cropBox.width <= 0) return;
 
+    // Draw cropped image to canvas
     canvas.width = 160;
     canvas.height = 160;
     const ctx = canvas.getContext('2d');
@@ -118,6 +121,7 @@ const ImageAnalyzer = () => {
       0, 0, 160, 160
     );
 
+    // Convert to blob and update image state
     canvas.toBlob((blob) => {
       if (blob) {
         setImage(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }));
@@ -169,14 +173,14 @@ const ImageAnalyzer = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-800 rounded-lg shadow-xl p-6 border border-gray-700">
-        <h2 className="text-2xl font-bold mb-4 text-blue-400">General Detection</h2>
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-2xl font-bold mb-4">Deepfake Detection</h2>
         
         {!originalUrl ? (
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-gray-600 rounded-lg p-12 text-center cursor-pointer hover:border-blue-500 transition-colors"
+            className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-blue-500 transition-colors"
           >
             <input
               ref={fileInputRef}
@@ -198,14 +202,15 @@ const ImageAnalyzer = () => {
                 strokeLinejoin="round"
               />
             </svg>
-            <p className="mt-2 text-sm text-gray-400">
-              Click to select an image (JPEG or PNG)
+            <p className="mt-2 text-sm text-gray-600">
+              Tap to take a photo or select an image
             </p>
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="bg-gray-900 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-2 text-gray-200">Original Image</h3>
+            {/* Original image with cropping interface */}
+            <div className="border rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-2">Original Image</h3>
               <div 
                 ref={containerRef}
                 className="relative inline-block touch-none"
@@ -248,7 +253,7 @@ const ImageAnalyzer = () => {
                 
                 {cropBox.width > 0 && (
                   <div
-                    className="absolute border-2 border-blue-400 pointer-events-none"
+                    className="absolute border-2 border-white pointer-events-none"
                     style={{
                       left: `${cropBox.x}px`,
                       top: `${cropBox.y}px`,
@@ -264,15 +269,14 @@ const ImageAnalyzer = () => {
               </div>
             </div>
 
+            {/* Cropped image display */}
             {croppedUrl && (
-              <div className="bg-gray-900 rounded-lg p-4">
+              <div className="border rounded-lg p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-lg font-semibold text-gray-200">
-                    Cropped Image (160x160)
-                  </h3>
+                  <h3 className="text-lg font-semibold">Cropped Image (160x160)</h3>
                   <button
                     onClick={handleRecrop}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg"
                   >
                     Recrop
                   </button>
@@ -289,41 +293,39 @@ const ImageAnalyzer = () => {
 
             <canvas ref={canvasRef} className="hidden" />
             
-            {!result && (
-              <button
-                onClick={handleAnalyze}
-                disabled={isAnalyzing || !croppedUrl}
-                className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 text-lg transition-colors"
-              >
-                {isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
-              </button>
-            )}
-
-            {result && (
-              <div className="bg-gray-900 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-4 text-blue-400">Analysis Results</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-800 p-4 rounded-lg">
-                    <p className="text-gray-400">Prediction</p>
-                    <p className="text-2xl font-bold text-white">
-                      {result.prediction}
-                    </p>
-                  </div>
-                  <div className="bg-gray-800 p-4 rounded-lg">
-                    <p className="text-gray-400">Confidence</p>
-                    <p className="text-2xl font-bold text-white">
-                      {(result.confidence * 100).toFixed(2)}%
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            <button
+              onClick={handleAnalyze}
+              disabled={isAnalyzing || !croppedUrl}
+              className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-lg"
+            >
+              {isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
+            </button>
           </div>
         )}
 
         {error && (
-          <div className="mt-4 p-4 bg-red-900/50 text-red-200 rounded-lg border border-red-700">
+          <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
             {error}
+          </div>
+        )}
+
+        {result && (
+          <div className="mt-6 p-6 bg-gray-50 rounded-lg">
+            <h3 className="text-xl font-semibold mb-4">Analysis Results</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-white rounded shadow">
+                <p className="text-gray-600">Prediction</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {result.prediction}
+                </p>
+              </div>
+              <div className="p-4 bg-white rounded shadow">
+                <p className="text-gray-600">Confidence</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {(result.confidence * 100).toFixed(2)}%
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>
