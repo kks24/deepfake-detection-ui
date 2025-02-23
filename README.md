@@ -1,14 +1,32 @@
 # Deepfake Detection UI
 
-A React-based web application for deepfake image detection with an intuitive user interface. Users can upload images, crop faces to 160x160 pixels, and analyze them for authenticity.
+A modern web application for detecting deepfake images using advanced AI analysis. The application offers both basic detection and in-depth analysis with image augmentation.
 
 ## Features
 
-- 📱 Responsive design (desktop & mobile)
-- 🖼️ Interactive image cropping to 160x160 pixels
-- 📸 Support for both camera capture and gallery selection
-- 🔍 Real-time analysis results
+### General Detection
+- 🖼️ Direct image analysis without cropping
+- ✂️ Optional 160x160 face cropping tool
 - 📊 Confidence score display
+- 🎯 Real-time prediction results
+
+### In-Depth Analysis
+- 🔄 Multiple augmentation techniques
+  - Grayscale conversion
+  - Image rotation
+  - Brightness adjustment
+  - Horizontal flipping
+- 📈 Consensus prediction from multiple analyses
+- 📊 Detailed confidence metrics
+- 🔍 Augmented analysis results
+- ⚡ Processing time and performance metrics
+
+### Common Features
+- 📱 Responsive design (desktop & mobile)
+- 📸 Support for both camera capture and gallery selection
+- 🖼️ Interactive image cropping option
+- 🔄 Real-time analysis
+- 📝 Integrated API documentation
 
 ## Tech Stack
 
@@ -26,7 +44,7 @@ A React-based web application for deepfake image detection with an intuitive use
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/kks24/deepfake-detection-ui.git
+git clone https://github.com/yourusername/deepfake-detection-ui.git
 cd deepfake-detection-ui
 ```
 
@@ -46,7 +64,7 @@ The application will be available at `http://localhost:3000`
 
 Create a `.env` file in the project root:
 ```
-REACT_APP_API_URL=http://localhost:5000/api/v1
+REACT_APP_API_URL=http://your-backend-url/api/v1
 ```
 
 ## Project Structure
@@ -54,11 +72,30 @@ REACT_APP_API_URL=http://localhost:5000/api/v1
 ```
 src/
 ├── components/
-│   └── ImageAnalyzer.jsx
-├── App.js
+│   ├── ImageAnalyzer.jsx     # General detection component
+│   └── AugmentedAnalyzer.jsx # In-depth analysis component
+├── App.js                    # Main application component
 ├── index.js
-└── index.css
+└── index.css                # Global styles and Tailwind imports
 ```
+
+## Usage
+
+1. Select Analysis Type:
+   - General Detection: Quick single-prediction analysis
+   - In-Depth Analysis: Comprehensive analysis with multiple augmentation techniques
+
+2. Image Upload:
+   - Click/tap to select from gallery or take a photo
+   - Choose direct analysis or cropping option
+
+3. Analysis Options:
+   - Direct Analysis: Process the full image immediately
+   - Crop Analysis: Crop to 160x160 pixels before processing
+
+4. View Results:
+   - General Detection: View prediction and confidence score
+   - In-Depth Analysis: View consensus prediction, augmented results, and detailed metrics
 
 ## Deployment
 
@@ -73,12 +110,14 @@ git push origin main
 
 2. The GitHub Actions workflow will automatically deploy to Vercel.
 
-## Development Notes
+## API Integration
 
-- Image cropping is implemented using HTML5 Canvas
-- Supports touch events for mobile devices
-- Maintains 160x160 pixel aspect ratio for model compatibility
-- Provides real-time visual feedback during cropping
+The frontend integrates with a Flask-based API that provides:
+- Basic image analysis endpoint
+- Augmented analysis with multiple techniques
+- Detailed prediction metrics
+
+API documentation is available in the application's "API Documentation" tab.
 
 ## License
 
