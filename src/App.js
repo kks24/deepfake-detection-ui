@@ -10,7 +10,7 @@ const ApiDocs = () => {
   useEffect(() => {
     const fetchDocs = async () => {
       try {
-        const response = await fetch('https://6ba3-158-178-227-161.ngrok-free.app/api/v1/docs', {
+        const response = await fetch('https://9651-158-178-227-161.ngrok-free.app/api/v1/docs', {
           headers: {
             'ngrok-skip-browser-warning': 'true'
           }

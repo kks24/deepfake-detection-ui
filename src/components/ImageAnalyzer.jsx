@@ -136,7 +136,7 @@ const ImageAnalyzer = () => {
       const formData = new FormData();
       formData.append('file', image);
 
-      const response = await fetch('https://9651-158-178-227-161.ngrok-free.app//api/v1/detect/', {
+      const response = await fetch('https://9651-158-178-227-161.ngrok-free.app/api/v1/detect/', {
         method: 'POST',
         body: formData,
       });
