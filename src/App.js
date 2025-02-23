@@ -1,65 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ImageAnalyzer from './components/ImageAnalyzer';
 import AugmentedAnalyzer from './components/AugmentedAnalyzer';
-
-const ApiDocs = () => {
-  const [docsHtml, setDocsHtml] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchDocs = async () => {
-      try {
-        const response = await fetch('https://9651-158-178-227-161.ngrok-free.app/api/v1/docs', {
-          headers: {
-            'ngrok-skip-browser-warning': 'true'
-          }
-        });
-        if (!response.ok) throw new Error('Failed to load documentation');
-        const html = await response.text();
-        setDocsHtml(html);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDocs();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-700">
-        <h2 className="text-2xl font-bold mb-4 text-blue-400">API Documentation</h2>
-        <div className="flex items-center justify-center h-[800px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-700">
-        <h2 className="text-2xl font-bold mb-4 text-blue-400">API Documentation</h2>
-        <div className="p-4 bg-red-900/50 text-red-200 rounded-lg border border-red-700">
-          {error}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-700">
-      <h2 className="text-2xl font-bold mb-4 text-blue-400">API Documentation</h2>
-      <div 
-        className="w-full h-[800px] rounded-lg bg-white"
-        dangerouslySetInnerHTML={{ __html: docsHtml }}
-      />
-    </div>
-  );
-};
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('general');
@@ -71,7 +12,18 @@ const App = () => {
       case 'augmented':
         return <AugmentedAnalyzer />;
       case 'docs':
-        return <ApiDocs />;
+        return (
+          <div className="bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-700">
+            <h2 className="text-2xl font-bold mb-4 text-blue-400">API Documentation</h2>
+            <div className="aspect-w-16 aspect-h-9">
+              <iframe
+                src="https://9651-158-178-227-161.ngrok-free.app/api/v1/docs"
+                className="w-full h-[800px] border-0 rounded-lg"
+                title="API Documentation"
+              />
+            </div>
+          </div>
+        );
       default:
         return <ImageAnalyzer />;
     }

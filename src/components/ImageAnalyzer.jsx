@@ -165,6 +165,7 @@ const ImageAnalyzer = () => {
 
   const handleRecrop = () => {
     setCroppedUrl(null);
+    setImage(null);  // Reset the cropped image
     setCropBox({ x: 0, y: 0, width: 0, height: 0 });
   };
 
@@ -205,7 +206,24 @@ const ImageAnalyzer = () => {
         ) : (
           <div className="space-y-6">
             <div className="bg-gray-900 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-2 text-gray-200">Original Image</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-200">Original Image</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-600 transition-colors"
+                  >
+                    {isAnalyzing ? 'Analyzing...' : 'Direct Analysis'}
+                  </button>
+                  <button
+                    onClick={handleRecrop}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Crop Image
+                  </button>
+                </div>
+              </div>
               <div 
                 ref={containerRef}
                 className="relative inline-block touch-none"
